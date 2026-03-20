@@ -80,9 +80,10 @@ export default async function OwnerPage({ params }: PageProps) {
           sx={{
             height: { xs: 300, sm: 400 },
             borderRadius: 3,
-            overflow: "hidden",
+            overflow: "visible",
             border: "1px solid",
             borderColor: "divider",
+            position: "relative",
             mb: 3,
           }}
         >

@@ -182,8 +182,8 @@ export default function PropertyMapView({ properties, initialViewport }: Propert
             longitude={selectedProperty.location.coordinates[0]}
             onClose={() => setSelectedProperty(null)}
             closeOnClick={false}
-            anchor="bottom"
             offset={12}
+            maxWidth="280px"
           >
             <Box sx={{ minWidth: 200 }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>

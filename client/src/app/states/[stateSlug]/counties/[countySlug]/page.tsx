@@ -87,9 +87,13 @@ export default async function CountyPage({ params }: PageProps) {
               sx={{
                 height: { xs: 350, sm: 450 },
                 borderRadius: 3,
-                overflow: "hidden",
+                overflow: "visible",
                 border: "1px solid",
                 borderColor: "divider",
+                position: "relative",
+                "& .mapboxgl-popup": {
+                  zIndex: 20,
+                },
               }}
             >
               <PropertyMapView properties={properties} />
