@@ -28,28 +28,55 @@ export default function Header() {
       }}
     >
       <Toolbar sx={{ gap: 1.5 }}>
-        <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
-          <Hotel sx={{ color: "primary.main", fontSize: 28 }} />
-          <Box>
-            <Typography
-              variant="h6"
+        <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
+          <Box
+            sx={{
+              fontSize: { xs: "0.95rem", sm: "1.25rem" },
+              fontWeight: 800,
+              lineHeight: 1.2,
+              letterSpacing: "0.02em",
+              fontFamily: "var(--font-inter), Inter, sans-serif",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <Box
+              component="span"
               sx={{
-                fontWeight: 700,
-                fontSize: { xs: "0.85rem", sm: "1.1rem" },
-                lineHeight: 1.2,
-                background: "linear-gradient(135deg, #5C9EFF 0%, #FF8A65 100%)",
+                background: `
+                  linear-gradient(180deg,
+                    #B22234 0%, #B22234 15%,
+                    #FFFFFF 15%, #FFFFFF 23%,
+                    #B22234 23%, #B22234 38%,
+                    #FFFFFF 38%, #FFFFFF 46%,
+                    #B22234 46%, #B22234 61%,
+                    #FFFFFF 61%, #FFFFFF 69%,
+                    #B22234 69%, #B22234 84%,
+                    #FFFFFF 84%, #FFFFFF 92%,
+                    #B22234 92%, #B22234 100%
+                  )`,
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+                display: "inline",
               }}
             >
-              Motel Owners of America
-            </Typography>
-            <Typography
-              variant="caption"
-              sx={{ color: "text.secondary", fontSize: "0.6rem", display: { xs: "none", sm: "block" } }}
+              MOTEL OWNERS
+            </Box>
+            <Box
+              component="span"
+              sx={{
+                fontSize: { xs: "0.65rem", sm: "0.8rem" },
+                fontWeight: 600,
+                letterSpacing: "0.15em",
+                background: "linear-gradient(90deg, #3C3B6E 0%, #5C9EFF 50%, #3C3B6E 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}
             >
-              Hotel & Motel Ownership Database
-            </Typography>
+              OF AMERICA
+            </Box>
           </Box>
         </Link>
 
