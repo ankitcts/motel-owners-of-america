@@ -7,7 +7,15 @@ import type { Topology } from "topojson-specification";
 async function fetchTopoJSON(path: string): Promise<GeoJSON.FeatureCollection> {
   const res = await fetch(path);
   if (!res.ok) throw new Error(`Failed to fetch ${path}`);
-  const topo: Topology = await res.json();
+  const data = await res.json();
+
+  // If it's already a GeoJSON FeatureCollection, return as-is
+  if (data.type === "FeatureCollection") {
+    return data as GeoJSON.FeatureCollection;
+  }
+
+  // Otherwise treat as TopoJSON and convert
+  const topo = data as Topology;
   const objectKey = Object.keys(topo.objects)[0];
   return topojson.feature(topo, topo.objects[objectKey]) as GeoJSON.FeatureCollection;
 }
