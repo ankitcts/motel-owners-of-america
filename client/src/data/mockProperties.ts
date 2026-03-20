@@ -131,8 +131,14 @@ export const MOCK_PROPERTIES: Property[] = [
   { id: "p45", name: "Golden Nugget Las Vegas", propertyType: "resort", address: "129 E Fremont St", city: "Las Vegas", countyFips: "32003", countyName: "Clark", stateAbbr: "NV", stateName: "Nevada", zip: "89101", location: { type: "Point", coordinates: [-115.1429, 36.1707] }, roomsCount: 2419, yearBuilt: 1946, ownerIds: ["o11"], slug: "golden-nugget-las-vegas" },
 ];
 
-export function getPropertiesByCounty(countyFips: string): Property[] {
-  return MOCK_PROPERTIES.filter((p) => p.countyFips === countyFips);
+export function getPropertiesByCounty(countyFips: string, countyName?: string): Property[] {
+  // Match by FIPS first
+  let results = MOCK_PROPERTIES.filter((p) => p.countyFips === countyFips);
+  // Fallback: match by county name (handles FIPS changes like Dade→Miami-Dade)
+  if (results.length === 0 && countyName) {
+    results = MOCK_PROPERTIES.filter((p) => p.countyName === countyName);
+  }
+  return results;
 }
 
 export function getPropertiesByState(stateAbbr: string): Property[] {

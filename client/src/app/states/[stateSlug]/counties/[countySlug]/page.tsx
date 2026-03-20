@@ -34,13 +34,16 @@ export default async function CountyPage({ params }: PageProps) {
   const county = getCountyBySlug(state.stateAbbr, countySlug);
   if (!county) notFound();
 
-  const properties = getPropertiesByCounty(county.fips);
+  const properties = getPropertiesByCounty(county.fips, county.name);
 
-  // Derive stats from actual property data
-  const hotelCount = properties.filter((p) => p.propertyType === "hotel").length;
-  const motelCount = properties.filter((p) => p.propertyType === "motel").length;
-  const otherCount = properties.length - hotelCount - motelCount;
-  const uniqueOwnerIds = new Set(properties.flatMap((p) => p.ownerIds));
+  // Use actual property data if available, otherwise fall back to Census summary
+  const hasProperties = properties.length > 0;
+  const displayStats = {
+    propertyCount: hasProperties ? properties.length : county.propertyCount,
+    hotelCount: hasProperties ? properties.filter((p) => p.propertyType === "hotel").length : county.hotelCount,
+    motelCount: hasProperties ? properties.filter((p) => p.propertyType !== "hotel").length : county.motelCount,
+    ownerCount: hasProperties ? new Set(properties.flatMap((p) => p.ownerIds)).size : county.ownerCount,
+  };
 
   return (
     <Container maxWidth="xl" sx={{ py: 3 }}>
@@ -57,28 +60,26 @@ export default async function CountyPage({ params }: PageProps) {
           {county.name} County, {state.stateAbbr}
         </Typography>
         <Typography variant="body1" color="text.secondary">
-          {properties.length > 0
-            ? `${properties.length} properties listed in ${county.name} County.`
-            : `Property data for ${county.name} County coming soon.`}
+          {hasProperties
+            ? `${properties.length} properties with details in ${county.name} County. Census records ${county.propertyCount} total establishments.`
+            : `${county.propertyCount} establishments tracked in ${county.name} County (Census data). Individual property details coming soon.`}
         </Typography>
       </Box>
 
-      {properties.length > 0 && (
-        <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid size={{ xs: 6, sm: 3 }}>
-            <StatCard title="Properties" value={properties.length} icon={Hotel} color="#5C9EFF" />
-          </Grid>
-          <Grid size={{ xs: 6, sm: 3 }}>
-            <StatCard title="Hotels" value={hotelCount} icon={Hotel} color="#34D399" />
-          </Grid>
-          <Grid size={{ xs: 6, sm: 3 }}>
-            <StatCard title="Motels" value={motelCount + otherCount} icon={MapsHomeWork} color="#FF8A65" />
-          </Grid>
-          <Grid size={{ xs: 6, sm: 3 }}>
-            <StatCard title="Owners" value={uniqueOwnerIds.size} icon={Person} color="#A78BFA" />
-          </Grid>
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid size={{ xs: 6, sm: 3 }}>
+          <StatCard title="Properties" value={displayStats.propertyCount} icon={Hotel} color="#5C9EFF" />
         </Grid>
-      )}
+        <Grid size={{ xs: 6, sm: 3 }}>
+          <StatCard title="Hotels" value={displayStats.hotelCount} icon={Hotel} color="#34D399" />
+        </Grid>
+        <Grid size={{ xs: 6, sm: 3 }}>
+          <StatCard title="Motels" value={displayStats.motelCount} icon={MapsHomeWork} color="#FF8A65" />
+        </Grid>
+        <Grid size={{ xs: 6, sm: 3 }}>
+          <StatCard title="Owners" value={displayStats.ownerCount} icon={Person} color="#A78BFA" />
+        </Grid>
+      </Grid>
 
       {properties.length > 0 ? (
         <Grid container spacing={3}>
