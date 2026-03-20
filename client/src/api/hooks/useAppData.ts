@@ -53,8 +53,11 @@ function liveStateToSummary(s: LiveYearSummary["states"][0], countyCount: number
 }
 
 // ─── useDataSource ──────────────────────────────────
-export function useDataSource() {
-  return useDevStore((s) => s.dataSource);
+// Returns "mock" until store is hydrated from localStorage to prevent hydration mismatch
+export function useDataSource(): "mock" | "live" {
+  const hydrated = useDevStore((s) => s.hydrated);
+  const dataSource = useDevStore((s) => s.dataSource);
+  return hydrated ? dataSource : "mock";
 }
 
 // ─── useStatesData ──────────────────────────────────
