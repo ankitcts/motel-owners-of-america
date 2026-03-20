@@ -30,10 +30,23 @@ export interface Property {
   slug: string;
 }
 
+export type OwnerCitizenship =
+  | "us_citizen"
+  | "indian_american"
+  | "chinese_american"
+  | "korean_american"
+  | "vietnamese_american"
+  | "hispanic_american"
+  | "african_american"
+  | "middle_eastern_american"
+  | "european_american"
+  | "other";
+
 export interface Owner {
   id: string;
   name: string;
   ownerType: OwnerType;
+  citizenship?: OwnerCitizenship;
   registrationState?: string;
   registrationNumber?: string;
   registeredAgent?: string;

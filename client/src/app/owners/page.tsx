@@ -1,17 +1,17 @@
 "use client";
 
-import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import {
   Container, Box, Typography, TextField, InputAdornment, Grid,
   Card, CardContent, Chip, Select, MenuItem, FormControl, InputLabel,
   Divider, CircularProgress,
 } from "@mui/material";
-import { Search, Hotel, LocationOn, Business, Person, Gavel } from "@mui/icons-material";
+import { Search, Hotel, LocationOn, Business, Person, Gavel, People, Flag } from "@mui/icons-material";
 import Link from "next/link";
-import { MOCK_OWNERS } from "@/data/mockProperties";
-import { ownerTypeLabel, formatNumber } from "@/utils/format";
+import { MOCK_OWNERS, getOwnerProperties } from "@/data/mockProperties";
+import { ownerTypeLabel, citizenshipLabel, propertyTypeLabel, formatNumber } from "@/utils/format";
 import { STATE_ABBR_TO_NAME } from "@/data/states";
-import type { Owner, OwnerType } from "@/types";
+import type { Owner } from "@/types";
 
 const PAGE_SIZE = 12;
 
@@ -23,29 +23,51 @@ const OWNER_TYPE_COLORS: Record<string, string> = {
   partnership: "#FF8A65",
 };
 
-const OWNER_TYPE_ICONS: Record<string, typeof Person> = {
-  individual: Person,
-  llc: Business,
-  corporation: Business,
-  trust: Gavel,
-  partnership: People,
+const CITIZENSHIP_COLORS: Record<string, string> = {
+  us_citizen: "#60A5FA",
+  indian_american: "#F97316",
+  chinese_american: "#EF4444",
+  korean_american: "#8B5CF6",
+  vietnamese_american: "#10B981",
+  hispanic_american: "#F59E0B",
+  african_american: "#6366F1",
+  middle_eastern_american: "#EC4899",
+  european_american: "#14B8A6",
+  other: "#6B7280",
 };
-
-import { People } from "@mui/icons-material";
 
 export default function OwnersPage() {
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [stateFilter, setStateFilter] = useState<string>("all");
+  const [citizenshipFilter, setCitizenshipFilter] = useState<string>("all");
+  const [propertyTypeFilter, setPropertyTypeFilter] = useState<string>("all");
   const [displayCount, setDisplayCount] = useState(PAGE_SIZE);
   const [loading, setLoading] = useState(false);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  // Get all unique states from owners
+  // Get all unique states and citizenships
   const allStates = useMemo(() => {
     const states = new Set<string>();
     MOCK_OWNERS.forEach((o) => o.statesPresent.forEach((s) => states.add(s)));
     return Array.from(states).sort();
+  }, []);
+
+  const allCitizenships = useMemo(() => {
+    const set = new Set<string>();
+    MOCK_OWNERS.forEach((o) => { if (o.citizenship) set.add(o.citizenship); });
+    return Array.from(set).sort();
+  }, []);
+
+  // Build owner → property types map
+  const ownerPropertyTypes = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    MOCK_OWNERS.forEach((o) => {
+      const props = getOwnerProperties(o.id);
+      const types = new Set(props.map((p) => p.propertyType));
+      map.set(o.id, types);
+    });
+    return map;
   }, []);
 
   // Filter owners
@@ -59,6 +81,7 @@ export default function OwnersPage() {
           o.name.toLowerCase().includes(q) ||
           o.ownerType.toLowerCase().includes(q) ||
           o.registrationNumber?.toLowerCase().includes(q) ||
+          (o.citizenship && citizenshipLabel(o.citizenship).toLowerCase().includes(q)) ||
           o.statesPresent.some((s) =>
             (STATE_ABBR_TO_NAME[s] || s).toLowerCase().includes(q) || s.toLowerCase().includes(q)
           )
@@ -73,29 +96,33 @@ export default function OwnersPage() {
       result = result.filter((o) => o.statesPresent.includes(stateFilter));
     }
 
-    return result.sort((a, b) => b.propertyCount - a.propertyCount);
-  }, [query, typeFilter, stateFilter]);
+    if (citizenshipFilter !== "all") {
+      result = result.filter((o) => o.citizenship === citizenshipFilter);
+    }
 
-  // Items currently visible (infinite scroll)
+    if (propertyTypeFilter !== "all") {
+      result = result.filter((o) => ownerPropertyTypes.get(o.id)?.has(propertyTypeFilter));
+    }
+
+    return result.sort((a, b) => b.propertyCount - a.propertyCount);
+  }, [query, typeFilter, stateFilter, citizenshipFilter, propertyTypeFilter, ownerPropertyTypes]);
+
   const visible = useMemo(
     () => filtered.slice(0, displayCount),
     [filtered, displayCount]
   );
   const hasMore = displayCount < filtered.length;
 
-  // Reset display count when filters change
   useEffect(() => {
     setDisplayCount(PAGE_SIZE);
-  }, [query, typeFilter, stateFilter]);
+  }, [query, typeFilter, stateFilter, citizenshipFilter, propertyTypeFilter]);
 
-  // Intersection observer for infinite scroll
   useEffect(() => {
     if (!sentinelRef.current) return;
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && hasMore && !loading) {
           setLoading(true);
-          // Simulate slight delay for UX
           setTimeout(() => {
             setDisplayCount((prev) => prev + PAGE_SIZE);
             setLoading(false);
@@ -108,13 +135,25 @@ export default function OwnersPage() {
     return () => observer.disconnect();
   }, [hasMore, loading]);
 
-  // Stats
+  // Citizenship breakdown stats
+  const citizenshipStats = useMemo(() => {
+    const counts: Record<string, { owners: number; properties: number }> = {};
+    MOCK_OWNERS.forEach((o) => {
+      const key = o.citizenship || "other";
+      if (!counts[key]) counts[key] = { owners: 0, properties: 0 };
+      counts[key].owners++;
+      counts[key].properties += o.propertyCount;
+    });
+    return Object.entries(counts)
+      .map(([key, val]) => ({ key, label: citizenshipLabel(key), ...val }))
+      .sort((a, b) => b.properties - a.properties);
+  }, []);
+
   const totalOwners = MOCK_OWNERS.length;
   const totalProperties = MOCK_OWNERS.reduce((acc, o) => acc + o.propertyCount, 0);
 
   return (
     <Container maxWidth="xl" sx={{ py: 3 }}>
-      {/* Header */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="h4" fontWeight={700} gutterBottom>
           Property Owners Directory
@@ -124,15 +163,42 @@ export default function OwnersPage() {
         </Typography>
       </Box>
 
+      {/* Citizenship breakdown chips */}
+      <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 3 }}>
+        <Chip
+          label={`All (${totalOwners})`}
+          size="small"
+          variant={citizenshipFilter === "all" ? "filled" : "outlined"}
+          onClick={() => setCitizenshipFilter("all")}
+          sx={{ fontWeight: citizenshipFilter === "all" ? 600 : 400 }}
+        />
+        {citizenshipStats.map((cs) => (
+          <Chip
+            key={cs.key}
+            icon={<Flag sx={{ fontSize: "14px !important" }} />}
+            label={`${cs.label} (${cs.owners})`}
+            size="small"
+            variant={citizenshipFilter === cs.key ? "filled" : "outlined"}
+            onClick={() => setCitizenshipFilter(citizenshipFilter === cs.key ? "all" : cs.key)}
+            sx={{
+              fontWeight: citizenshipFilter === cs.key ? 600 : 400,
+              borderColor: citizenshipFilter === cs.key ? CITIZENSHIP_COLORS[cs.key] : undefined,
+              bgcolor: citizenshipFilter === cs.key ? `${CITIZENSHIP_COLORS[cs.key]}20` : undefined,
+              color: citizenshipFilter === cs.key ? CITIZENSHIP_COLORS[cs.key] : undefined,
+            }}
+          />
+        ))}
+      </Box>
+
       {/* Filters */}
       <Card sx={{ mb: 3 }}>
         <CardContent sx={{ pb: "16px !important" }}>
           <Grid container spacing={2} alignItems="center">
-            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <TextField
                 fullWidth
                 size="small"
-                placeholder="Search by name, LLC, state..."
+                placeholder="Search by name, LLC, citizenship..."
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 slotProps={{
@@ -165,6 +231,37 @@ export default function OwnersPage() {
             </Grid>
             <Grid size={{ xs: 6, sm: 3, md: 2 }}>
               <FormControl fullWidth size="small">
+                <InputLabel>Citizenship</InputLabel>
+                <Select
+                  value={citizenshipFilter}
+                  label="Citizenship"
+                  onChange={(e) => setCitizenshipFilter(e.target.value)}
+                >
+                  <MenuItem value="all">All</MenuItem>
+                  {allCitizenships.map((c) => (
+                    <MenuItem key={c} value={c}>{citizenshipLabel(c)}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid size={{ xs: 6, sm: 3, md: 2 }}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Property Type</InputLabel>
+                <Select
+                  value={propertyTypeFilter}
+                  label="Property Type"
+                  onChange={(e) => setPropertyTypeFilter(e.target.value)}
+                >
+                  <MenuItem value="all">All</MenuItem>
+                  <MenuItem value="hotel">Hotel</MenuItem>
+                  <MenuItem value="motel">Motel</MenuItem>
+                  <MenuItem value="resort">Resort</MenuItem>
+                  <MenuItem value="inn">Inn</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid size={{ xs: 6, sm: 3, md: 2 }}>
+              <FormControl fullWidth size="small">
                 <InputLabel>State</InputLabel>
                 <Select
                   value={stateFilter}
@@ -180,7 +277,7 @@ export default function OwnersPage() {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid size={{ xs: 12, md: 4 }}>
+            <Grid size={{ xs: 6, md: 3 }}>
               <Typography variant="body2" color="text.secondary" sx={{ textAlign: { md: "right" } }}>
                 Showing {visible.length} of {filtered.length} owners
               </Typography>
@@ -223,6 +320,7 @@ export default function OwnersPage() {
 
 function OwnerCard({ owner }: { owner: Owner }) {
   const color = OWNER_TYPE_COLORS[owner.ownerType] || "#5C9EFF";
+  const citizenColor = owner.citizenship ? CITIZENSHIP_COLORS[owner.citizenship] || "#6B7280" : "#6B7280";
 
   return (
     <Card
@@ -242,18 +340,34 @@ function OwnerCard({ owner }: { owner: Owner }) {
       }}
     >
       <CardContent sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
-        {/* Header: type chip */}
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1.5 }}>
-          <Chip
-            label={ownerTypeLabel(owner.ownerType)}
-            size="small"
-            sx={{
-              bgcolor: `${color}18`,
-              color,
-              fontWeight: 600,
-              fontSize: "0.7rem",
-            }}
-          />
+        {/* Header: type + citizenship chips */}
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1.5, gap: 0.5 }}>
+          <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+            <Chip
+              label={ownerTypeLabel(owner.ownerType)}
+              size="small"
+              sx={{
+                bgcolor: `${color}18`,
+                color,
+                fontWeight: 600,
+                fontSize: "0.65rem",
+                height: 22,
+              }}
+            />
+            {owner.citizenship && (
+              <Chip
+                label={citizenshipLabel(owner.citizenship)}
+                size="small"
+                sx={{
+                  bgcolor: `${citizenColor}18`,
+                  color: citizenColor,
+                  fontWeight: 500,
+                  fontSize: "0.65rem",
+                  height: 22,
+                }}
+              />
+            )}
+          </Box>
           <Typography variant="h6" fontWeight={700} color="primary.main" sx={{ lineHeight: 1 }}>
             {owner.propertyCount}
           </Typography>
@@ -289,20 +403,10 @@ function OwnerCard({ owner }: { owner: Owner }) {
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
             {owner.statesPresent.slice(0, 5).map((s) => (
-              <Chip
-                key={s}
-                label={s}
-                size="small"
-                variant="outlined"
-                sx={{ height: 22, fontSize: "0.65rem" }}
-              />
+              <Chip key={s} label={s} size="small" variant="outlined" sx={{ height: 22, fontSize: "0.65rem" }} />
             ))}
             {owner.statesPresent.length > 5 && (
-              <Chip
-                label={`+${owner.statesPresent.length - 5}`}
-                size="small"
-                sx={{ height: 22, fontSize: "0.65rem", bgcolor: "rgba(255,255,255,0.05)" }}
-              />
+              <Chip label={`+${owner.statesPresent.length - 5}`} size="small" sx={{ height: 22, fontSize: "0.65rem", bgcolor: "rgba(255,255,255,0.05)" }} />
             )}
           </Box>
           <Typography variant="caption" color="text.secondary">

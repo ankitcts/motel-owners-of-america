@@ -26,6 +26,22 @@ export function ownerTypeLabel(type: string): string {
   return labels[type] || type;
 }
 
+export function citizenshipLabel(type: string): string {
+  const labels: Record<string, string> = {
+    us_citizen: "US Citizen",
+    indian_american: "Indian American",
+    chinese_american: "Chinese American",
+    korean_american: "Korean American",
+    vietnamese_american: "Vietnamese American",
+    hispanic_american: "Hispanic American",
+    african_american: "African American",
+    middle_eastern_american: "Middle Eastern American",
+    european_american: "European American",
+    other: "Other",
+  };
+  return labels[type] || type;
+}
+
 export function propertyTypeLabel(type: string): string {
   const labels: Record<string, string> = {
     hotel: "Hotel",
