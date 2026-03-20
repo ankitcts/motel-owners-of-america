@@ -11,7 +11,9 @@ import Link from "next/link";
 import { getOwnerProperties } from "@/data/mockProperties";
 import { ownerTypeLabel, citizenshipLabel, propertyTypeLabel, formatNumber } from "@/utils/format";
 import { STATE_ABBR_TO_NAME } from "@/data/states";
+import { OWNERSHIP_BY_YEAR } from "@/data/ownershipTrends";
 import { useOwnersData, useDataSource } from "@/api/hooks/useAppData";
+import YearSelector from "@/components/common/YearSelector";
 import type { Owner } from "@/types";
 
 const PAGE_SIZE = 12;
@@ -37,8 +39,11 @@ const CITIZENSHIP_COLORS: Record<string, string> = {
   other: "#6B7280",
 };
 
+const MOCK_YEARS = OWNERSHIP_BY_YEAR.map((d) => d.year);
+
 export default function OwnersPage() {
   const { owners: MOCK_OWNERS, source } = useOwnersData();
+  const [yearIndex, setYearIndex] = useState(MOCK_YEARS.length - 1);
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [stateFilter, setStateFilter] = useState<string>("all");
@@ -157,12 +162,28 @@ export default function OwnersPage() {
   return (
     <Container maxWidth="xl" sx={{ py: 3 }}>
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" fontWeight={700} gutterBottom>
-          Property Owners Directory
-        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
+          <Typography variant="h4" fontWeight={700}>
+            Property Owners Directory
+          </Typography>
+          <Chip
+            label={MOCK_YEARS[yearIndex]}
+            size="small"
+            sx={{ bgcolor: "rgba(92,158,255,0.15)", color: "#5C9EFF", fontWeight: 600, fontSize: "0.7rem" }}
+          />
+        </Box>
         <Typography variant="body1" color="text.secondary">
           Browse {totalOwners} hotel & motel owners managing {formatNumber(totalProperties)} properties across the USA.
         </Typography>
+      </Box>
+
+      {/* Year selector */}
+      <Box sx={{ mb: 3 }}>
+        <YearSelector
+          years={MOCK_YEARS}
+          selectedIndex={yearIndex}
+          onYearChange={(idx) => setYearIndex(Math.max(0, Math.min(MOCK_YEARS.length - 1, idx)))}
+        />
       </Box>
 
       {/* Citizenship breakdown chips */}
