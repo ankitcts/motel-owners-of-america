@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import {
   Container, Box, Typography, TextField, InputAdornment, Grid,
   Card, CardContent, Chip, Select, MenuItem, FormControl, InputLabel,
@@ -11,6 +11,7 @@ import Link from "next/link";
 import { getOwnerProperties } from "@/data/mockProperties";
 import { ownerTypeLabel, citizenshipLabel, propertyTypeLabel, formatNumber } from "@/utils/format";
 import { STATE_ABBR_TO_NAME } from "@/data/states";
+import { OWNERSHIP_BY_YEAR, CITIZENSHIP_KEYS, type YearData } from "@/data/ownershipTrends";
 import { useOwnersData, useDataSource, useAvailableYears } from "@/api/hooks/useAppData";
 import YearSelector from "@/components/common/YearSelector";
 import type { Owner } from "@/types";
@@ -52,23 +53,47 @@ export default function OwnersPage() {
   const [loading, setLoading] = useState(false);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
+  const selectedYear = years[safeIndex];
+
+  // Scale owner property counts based on selected year
+  const scaledOwners = useMemo(() => {
+    const latestTrend = OWNERSHIP_BY_YEAR[OWNERSHIP_BY_YEAR.length - 1];
+    const selectedTrend = OWNERSHIP_BY_YEAR.find((d) => d.year === selectedYear);
+    if (!selectedTrend || !latestTrend) return MOCK_OWNERS;
+
+    const latestTotal = CITIZENSHIP_KEYS.reduce((s, k) => s + (latestTrend[k as keyof YearData] as number), 0);
+    const selectedTotal = CITIZENSHIP_KEYS.reduce((s, k) => s + (selectedTrend[k as keyof YearData] as number), 0);
+    const globalRatio = selectedTotal / latestTotal;
+
+    if (Math.abs(globalRatio - 1) < 0.01) return MOCK_OWNERS;
+
+    return MOCK_OWNERS.map((o) => {
+      // Per-citizenship ratio for more accurate scaling
+      const citizenKey = o.citizenship || "other";
+      const latestVal = latestTrend[citizenKey as keyof YearData] as number || 1;
+      const selectedVal = selectedTrend[citizenKey as keyof YearData] as number || 1;
+      const ratio = selectedVal / latestVal;
+      return { ...o, propertyCount: Math.max(1, Math.round(o.propertyCount * ratio)) };
+    });
+  }, [MOCK_OWNERS, selectedYear]);
+
   // Get all unique states and citizenships
   const allStates = useMemo(() => {
     const states = new Set<string>();
-    MOCK_OWNERS.forEach((o) => o.statesPresent.forEach((s) => states.add(s)));
+    scaledOwners.forEach((o) => o.statesPresent.forEach((s) => states.add(s)));
     return Array.from(states).sort();
-  }, []);
+  }, [scaledOwners]);
 
   const allCitizenships = useMemo(() => {
     const set = new Set<string>();
-    MOCK_OWNERS.forEach((o) => { if (o.citizenship) set.add(o.citizenship); });
+    scaledOwners.forEach((o) => { if (o.citizenship) set.add(o.citizenship); });
     return Array.from(set).sort();
-  }, []);
+  }, [scaledOwners]);
 
   // Build owner → property types map
   const ownerPropertyTypes = useMemo(() => {
     const map = new Map<string, Set<string>>();
-    MOCK_OWNERS.forEach((o) => {
+    scaledOwners.forEach((o) => {
       const props = getOwnerProperties(o.id);
       const types = new Set(props.map((p) => p.propertyType));
       map.set(o.id, types);
@@ -78,7 +103,7 @@ export default function OwnersPage() {
 
   // Filter owners
   const filtered = useMemo(() => {
-    let result = MOCK_OWNERS;
+    let result = scaledOwners;
 
     if (query && query.length >= 1) {
       const q = query.toLowerCase();
@@ -111,7 +136,7 @@ export default function OwnersPage() {
     }
 
     return result.sort((a, b) => b.propertyCount - a.propertyCount);
-  }, [query, typeFilter, stateFilter, citizenshipFilter, propertyTypeFilter, ownerPropertyTypes]);
+  }, [scaledOwners, query, typeFilter, stateFilter, citizenshipFilter, propertyTypeFilter, ownerPropertyTypes]);
 
   const visible = useMemo(
     () => filtered.slice(0, displayCount),
@@ -144,7 +169,7 @@ export default function OwnersPage() {
   // Citizenship breakdown stats
   const citizenshipStats = useMemo(() => {
     const counts: Record<string, { owners: number; properties: number }> = {};
-    MOCK_OWNERS.forEach((o) => {
+    scaledOwners.forEach((o) => {
       const key = o.citizenship || "other";
       if (!counts[key]) counts[key] = { owners: 0, properties: 0 };
       counts[key].owners++;
@@ -153,10 +178,10 @@ export default function OwnersPage() {
     return Object.entries(counts)
       .map(([key, val]) => ({ key, label: citizenshipLabel(key), ...val }))
       .sort((a, b) => b.properties - a.properties);
-  }, []);
+  }, [scaledOwners]);
 
-  const totalOwners = MOCK_OWNERS.length;
-  const totalProperties = MOCK_OWNERS.reduce((acc, o) => acc + o.propertyCount, 0);
+  const totalOwners = scaledOwners.length;
+  const totalProperties = scaledOwners.reduce((acc, o) => acc + o.propertyCount, 0);
 
   return (
     <Container maxWidth="xl" sx={{ py: 3 }}>

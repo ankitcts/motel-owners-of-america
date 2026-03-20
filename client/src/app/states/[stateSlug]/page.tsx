@@ -1,14 +1,20 @@
 "use client";
 
-import { use } from "react";
+import dynamic from "next/dynamic";
 import { notFound, useParams } from "next/navigation";
-import { Container, Box, Typography, Grid, Chip } from "@mui/material";
+import { Container, Box, Typography, Grid, Chip, CircularProgress, Skeleton } from "@mui/material";
 import { Hotel, MapsHomeWork, Person } from "@mui/icons-material";
 import Breadcrumbs from "@/components/common/Breadcrumbs";
 import StatCard from "@/components/common/StatCard";
-import CountyList from "@/components/detail/CountyList";
-import StateMapView from "@/components/map/StateMapView";
-import { getStateBySlug, STATES_DATA } from "@/data/states";
+import { getStateBySlug } from "@/data/states";
+
+const StateMapView = dynamic(() => import("@/components/map/StateMapView"), {
+  loading: () => <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%" }}><CircularProgress /></Box>,
+  ssr: false,
+});
+const CountyList = dynamic(() => import("@/components/detail/CountyList"), {
+  loading: () => <Skeleton variant="rounded" height={550} sx={{ borderRadius: 3 }} />,
+});
 import { useStatesData, useCountiesData } from "@/api/hooks/useAppData";
 
 export default function StatePage() {
