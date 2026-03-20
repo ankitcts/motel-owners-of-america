@@ -1,38 +1,28 @@
-import { notFound } from "next/navigation";
-import { Container, Box, Typography, Grid } from "@mui/material";
-import { Hotel, MapsHomeWork, Person, Map as MapIcon } from "@mui/icons-material";
+"use client";
+
+import { use } from "react";
+import { notFound, useParams } from "next/navigation";
+import { Container, Box, Typography, Grid, Chip } from "@mui/material";
+import { Hotel, MapsHomeWork, Person } from "@mui/icons-material";
 import Breadcrumbs from "@/components/common/Breadcrumbs";
 import StatCard from "@/components/common/StatCard";
 import CountyList from "@/components/detail/CountyList";
 import StateMapView from "@/components/map/StateMapView";
 import { getStateBySlug, STATES_DATA } from "@/data/states";
-import { getCountiesByState } from "@/data/counties";
-import type { Metadata } from "next";
+import { useStatesData, useCountiesData } from "@/api/hooks/useAppData";
 
-interface PageProps {
-  params: Promise<{ stateSlug: string }>;
-}
+export default function StatePage() {
+  const params = useParams<{ stateSlug: string }>();
+  const stateSlug = params.stateSlug;
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { stateSlug } = await params;
-  const state = getStateBySlug(stateSlug);
-  if (!state) return { title: "State Not Found" };
-  return {
-    title: `Hotel & Motel Owners in ${state.stateName}`,
-    description: `Explore ${state.propertyCount} hotels and motels across ${state.countyCount} counties in ${state.stateName}. View ownership data and property details.`,
-  };
-}
+  const { states, source } = useStatesData();
+  const mockState = getStateBySlug(stateSlug);
 
-export function generateStaticParams() {
-  return STATES_DATA.map((s) => ({ stateSlug: s.slug }));
-}
-
-export default async function StatePage({ params }: PageProps) {
-  const { stateSlug } = await params;
-  const state = getStateBySlug(stateSlug);
+  // Find state from either live or mock data
+  const state = states.find((s) => s.slug === stateSlug) || mockState;
   if (!state) notFound();
 
-  const counties = getCountiesByState(state.stateAbbr);
+  const { counties, source: countySource } = useCountiesData(state.stateAbbr);
 
   return (
     <Container maxWidth="xl" sx={{ py: 3 }}>
@@ -44,13 +34,25 @@ export default async function StatePage({ params }: PageProps) {
       />
 
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" fontWeight={700} gutterBottom>
-          {state.stateName}
-        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
+          <Typography variant="h4" fontWeight={700}>
+            {state.stateName}
+          </Typography>
+          <Chip
+            label={source === "live" ? "Live" : "Mock"}
+            size="small"
+            sx={{
+              bgcolor: source === "live" ? "rgba(52,211,153,0.15)" : "rgba(251,191,36,0.15)",
+              color: source === "live" ? "#34D399" : "#FBBF24",
+              fontWeight: 600,
+              fontSize: "0.65rem",
+            }}
+          />
+        </Box>
         <Typography variant="body1" color="text.secondary">
           {counties.length > 0
-            ? `Explore ${state.propertyCount} hotels and motels across ${counties.length} counties.`
-            : `${state.propertyCount} hotels and motels tracked. County-level data coming soon.`}
+            ? `Explore ${state.propertyCount.toLocaleString()} hotels and motels across ${counties.length} counties.`
+            : `${state.propertyCount.toLocaleString()} hotels and motels tracked. County-level data coming soon.`}
         </Typography>
       </Box>
 

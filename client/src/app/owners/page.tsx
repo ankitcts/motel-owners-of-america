@@ -8,9 +8,10 @@ import {
 } from "@mui/material";
 import { Search, Hotel, LocationOn, Business, Person, Gavel, People, Flag } from "@mui/icons-material";
 import Link from "next/link";
-import { MOCK_OWNERS, getOwnerProperties } from "@/data/mockProperties";
+import { getOwnerProperties } from "@/data/mockProperties";
 import { ownerTypeLabel, citizenshipLabel, propertyTypeLabel, formatNumber } from "@/utils/format";
 import { STATE_ABBR_TO_NAME } from "@/data/states";
+import { useOwnersData, useDataSource } from "@/api/hooks/useAppData";
 import type { Owner } from "@/types";
 
 const PAGE_SIZE = 12;
@@ -37,6 +38,7 @@ const CITIZENSHIP_COLORS: Record<string, string> = {
 };
 
 export default function OwnersPage() {
+  const { owners: MOCK_OWNERS, source } = useOwnersData();
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [stateFilter, setStateFilter] = useState<string>("all");

@@ -14,23 +14,27 @@ import {
   Cell, LabelList, Tooltip as RechartsTooltip,
 } from "recharts";
 import {
-  OWNERSHIP_BY_YEAR, CITIZENSHIP_KEYS, CITIZENSHIP_CHART_COLORS,
+  CITIZENSHIP_KEYS, CITIZENSHIP_CHART_COLORS,
   CITIZENSHIP_SUBCATEGORIES,
   type YearData,
 } from "@/data/ownershipTrends";
 import { citizenshipLabel, formatNumber } from "@/utils/format";
+import { useAnalyticsData } from "@/api/hooks/useAppData";
 
 const PLAY_SPEEDS = [1000, 1500, 2000, 3000];
 const SPEED_LABELS = ["Fast", "Normal", "Slow", "Very Slow"];
 
 export default function AnalyticsPage() {
+  const { data: OWNERSHIP_BY_YEAR, source: analyticsSource } = useAnalyticsData();
   const [yearIndex, setYearIndex] = useState(OWNERSHIP_BY_YEAR.length - 1);
   const [playing, setPlaying] = useState(false);
   const [speedIndex, setSpeedIndex] = useState(1);
   const [drillCitizenship, setDrillCitizenship] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const currentYear = OWNERSHIP_BY_YEAR[yearIndex];
+  // Clamp yearIndex when data changes
+  const safeIndex = Math.min(yearIndex, OWNERSHIP_BY_YEAR.length - 1);
+  const currentYear = OWNERSHIP_BY_YEAR[safeIndex];
   const years = OWNERSHIP_BY_YEAR.map((d) => d.year);
 
   // Top-level bar data
@@ -131,9 +135,21 @@ export default function AnalyticsPage() {
   return (
     <Container maxWidth="xl" sx={{ py: 3 }}>
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" fontWeight={700} gutterBottom>
-          Ownership by Citizenship
-        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
+          <Typography variant="h4" fontWeight={700}>
+            Ownership by Citizenship
+          </Typography>
+          <Chip
+            label={analyticsSource === "live" ? "Live Data" : "Mock Data"}
+            size="small"
+            sx={{
+              bgcolor: analyticsSource === "live" ? "rgba(52,211,153,0.15)" : "rgba(251,191,36,0.15)",
+              color: analyticsSource === "live" ? "#34D399" : "#FBBF24",
+              fontWeight: 600,
+              fontSize: "0.7rem",
+            }}
+          />
+        </Box>
         <Typography variant="body1" color="text.secondary">
           How hotel & motel ownership has changed across communities from 2000 to 2026.
           {!drillCitizenship && " Click any bar to drill down into sub-categories."}
