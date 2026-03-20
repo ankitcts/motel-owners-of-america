@@ -29,53 +29,35 @@ export default function Header() {
     >
       <Toolbar sx={{ gap: 1.5 }}>
         <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
-          <Box
-            sx={{
-              fontSize: { xs: "0.95rem", sm: "1.25rem" },
-              fontWeight: 800,
-              lineHeight: 1.2,
-              letterSpacing: "0.02em",
-              fontFamily: "var(--font-inter), Inter, sans-serif",
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 800,
+                fontSize: { xs: "0.9rem", sm: "1.15rem" },
+                lineHeight: 1.2,
+                color: "#E5E7EB",
+                letterSpacing: "0.01em",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Motel Owners of America
+            </Typography>
             <Box
               component="span"
               sx={{
-                background: `
-                  linear-gradient(180deg,
-                    #B22234 0%, #B22234 15%,
-                    #FFFFFF 15%, #FFFFFF 23%,
-                    #B22234 23%, #B22234 38%,
-                    #FFFFFF 38%, #FFFFFF 46%,
-                    #B22234 46%, #B22234 61%,
-                    #FFFFFF 61%, #FFFFFF 69%,
-                    #B22234 69%, #B22234 84%,
-                    #FFFFFF 84%, #FFFFFF 92%,
-                    #B22234 92%, #B22234 100%
-                  )`,
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-                display: "inline",
+                display: "inline-block",
+                fontSize: { xs: "1.1rem", sm: "1.4rem" },
+                lineHeight: 1,
+                animation: "flagWave 3s ease-in-out infinite",
+                "@keyframes flagWave": {
+                  "0%, 100%": { transform: "rotate(0deg)" },
+                  "25%": { transform: "rotate(8deg)" },
+                  "75%": { transform: "rotate(-4deg)" },
+                },
               }}
             >
-              MOTEL OWNERS
-            </Box>
-            <Box
-              component="span"
-              sx={{
-                fontSize: { xs: "0.65rem", sm: "0.8rem" },
-                fontWeight: 600,
-                letterSpacing: "0.15em",
-                background: "linear-gradient(90deg, #3C3B6E 0%, #5C9EFF 50%, #3C3B6E 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-              }}
-            >
-              OF AMERICA
+              🇺🇸
             </Box>
           </Box>
         </Link>
