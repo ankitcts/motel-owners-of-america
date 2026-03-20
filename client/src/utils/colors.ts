@@ -8,9 +8,9 @@ export function createChoroplethScale(maxValue: number) {
 }
 
 export const PROPERTY_TYPE_COLORS: Record<string, string> = {
-  hotel: "#5C9EFF",
+  hotel: "#34D399",
   motel: "#FF8A65",
-  inn: "#34D399",
+  inn: "#5C9EFF",
   resort: "#A78BFA",
   extended_stay: "#FBBF24",
 };
