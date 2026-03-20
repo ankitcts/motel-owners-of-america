@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   Container, Box, Typography, Card, CardContent, IconButton,
-  Slider, Chip, Grid, Tooltip, Button,
+  Slider, Chip, Grid, Tooltip, Button, FormControl, InputLabel,
+  Select, MenuItem,
 } from "@mui/material";
 import {
   PlayArrow, Pause, SkipPrevious, SkipNext, Speed, ArrowBack,
@@ -23,7 +24,7 @@ const PLAY_SPEEDS = [1000, 1500, 2000, 3000];
 const SPEED_LABELS = ["Fast", "Normal", "Slow", "Very Slow"];
 
 export default function AnalyticsPage() {
-  const [yearIndex, setYearIndex] = useState(0);
+  const [yearIndex, setYearIndex] = useState(OWNERSHIP_BY_YEAR.length - 1);
   const [playing, setPlaying] = useState(false);
   const [speedIndex, setSpeedIndex] = useState(1);
   const [drillCitizenship, setDrillCitizenship] = useState<string | null>(null);
@@ -262,7 +263,21 @@ export default function AnalyticsPage() {
       {/* Playback controls */}
       <Card>
         <CardContent>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2, flexWrap: "wrap" }}>
+            {/* Year dropdown */}
+            <FormControl size="small" sx={{ minWidth: 100 }}>
+              <InputLabel>Year</InputLabel>
+              <Select
+                value={yearIndex}
+                label="Year"
+                onChange={(e) => { setPlaying(false); setYearIndex(e.target.value as number); }}
+              >
+                {years.map((y, i) => (
+                  <MenuItem key={y} value={i}>{y}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
             <IconButton onClick={handlePrev} disabled={yearIndex === 0} size="small" sx={{ color: "text.secondary" }}>
               <SkipPrevious />
             </IconButton>
