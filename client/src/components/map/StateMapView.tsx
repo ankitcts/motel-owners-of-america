@@ -1,13 +1,12 @@
 "use client";
 
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import MapGL, { Source, Layer, NavigationControl } from "react-map-gl/mapbox";
-import type { MapMouseEvent, ViewStateChangeEvent, LayerProps } from "react-map-gl/mapbox";
+import type { MapMouseEvent, ViewStateChangeEvent } from "react-map-gl/mapbox";
 import { useRouter } from "next/navigation";
 import { Box, Typography, Paper, CircularProgress } from "@mui/material";
 import type { StateSummary, CountySummary } from "@/types";
-import { useCountyGeo } from "@/api/hooks/useGeoData";
-import { createChoroplethScale, BORDER_COLOR } from "@/utils/colors";
+import { createChoroplethScale } from "@/utils/colors";
 import { formatNumber } from "@/utils/format";
 import { STATE_CENTERS } from "@/data/stateCenters";
 
@@ -27,9 +26,11 @@ interface HoveredCounty {
 
 export default function StateMapView({ state, counties }: StateMapViewProps) {
   const router = useRouter();
-  const { data: countyGeo, isLoading, error } = useCountyGeo(state.stateAbbr);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [hovered, setHovered] = useState<HoveredCounty | null>(null);
+  const [geoData, setGeoData] = useState<GeoJSON.FeatureCollection | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   const center = STATE_CENTERS[state.stateAbbr] || { lat: 39.8283, lng: -98.5795, zoom: 6 };
   const [viewState, setViewState] = useState({
@@ -48,52 +49,61 @@ export default function StateMapView({ state, counties }: StateMapViewProps) {
     [counties]
   );
 
-  const geoData = useMemo(() => {
-    if (!countyGeo) return null;
-    return {
-      ...countyGeo,
-      features: countyGeo.features.map((f: GeoJSON.Feature) => {
-        const name = f.properties?.name || f.properties?.NAME || "";
-        const county = countyMap.get(name);
-        return {
-          ...f,
-          properties: {
-            ...f.properties,
-            propertyCount: county?.propertyCount || 0,
-            fillColor: county ? colorScale(county.propertyCount) : "#1e293b",
-            countyName: name,
-            slug: county?.slug || "",
-          },
+  // Fetch county GeoJSON and merge with mock data
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setFetchError(null);
+
+    fetch(`/geo/counties/${state.stateAbbr}.topo.json`)
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then((data: GeoJSON.FeatureCollection) => {
+        if (cancelled) return;
+
+        // Merge county data with GeoJSON features
+        const merged: GeoJSON.FeatureCollection = {
+          type: "FeatureCollection",
+          features: data.features.map((f) => {
+            const name = f.properties?.name || "";
+            const county = countyMap.get(name);
+            return {
+              ...f,
+              properties: {
+                ...f.properties,
+                propertyCount: county?.propertyCount || 0,
+                fillColor: county ? colorScale(county.propertyCount) : "#334155",
+                countyName: name,
+                slug: county?.slug || "",
+              },
+            };
+          }),
         };
-      }),
-    };
-  }, [countyGeo, countyMap, colorScale]);
 
-  const fillLayer: LayerProps = {
-    id: "county-fill",
-    type: "fill",
-    paint: {
-      "fill-color": ["get", "fillColor"],
-      "fill-opacity": ["case", ["==", ["get", "countyName"], hoveredId || ""], 0.95, 0.8],
-    },
-  };
+        setGeoData(merged);
+        setLoading(false);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        console.error(`Failed to load counties for ${state.stateAbbr}:`, err);
+        setFetchError(err.message);
+        setLoading(false);
+      });
 
-  const lineLayer: LayerProps = {
-    id: "county-outline",
-    type: "line",
-    paint: {
-      "line-color": ["case", ["==", ["get", "countyName"], hoveredId || ""], "#FFD700", "rgba(255, 255, 255, 0.5)"],
-      "line-width": ["case", ["==", ["get", "countyName"], hoveredId || ""], 2.5, 1],
-    },
-  };
+    return () => { cancelled = true; };
+  }, [state.stateAbbr, countyMap, colorScale]);
 
   const handleMouseMove = useCallback((e: MapMouseEvent) => {
-    if (e.features && e.features.length > 0) {
-      const f = e.features[0];
-      setHoveredId(f.properties?.countyName || null);
+    const features = (e as unknown as { features?: Array<{ properties?: Record<string, unknown> }> }).features;
+    if (features && features.length > 0) {
+      const f = features[0];
+      const name = (f.properties?.countyName as string) || "";
+      setHoveredId(name);
       setHovered({
-        name: f.properties?.countyName || "",
-        count: f.properties?.propertyCount || 0,
+        name,
+        count: (f.properties?.propertyCount as number) || 0,
         x: e.point.x,
         y: e.point.y,
       });
@@ -107,8 +117,9 @@ export default function StateMapView({ state, counties }: StateMapViewProps) {
 
   const handleClick = useCallback(
     (e: MapMouseEvent) => {
-      if (e.features && e.features.length > 0) {
-        const slug = e.features[0].properties?.slug;
+      const features = (e as unknown as { features?: Array<{ properties?: Record<string, unknown> }> }).features;
+      if (features && features.length > 0) {
+        const slug = features[0].properties?.slug as string;
         if (slug) router.push(`/states/${state.slug}/counties/${slug}`);
       }
     },
@@ -125,14 +136,14 @@ export default function StateMapView({ state, counties }: StateMapViewProps) {
 
   return (
     <Box sx={{ position: "relative", width: "100%", height: "100%" }}>
-      {isLoading && (
+      {loading && (
         <Box sx={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 10 }}>
           <CircularProgress size={32} />
         </Box>
       )}
-      {error && (
+      {fetchError && (
         <Box sx={{ position: "absolute", top: 12, left: 12, zIndex: 10, bgcolor: "error.main", px: 2, py: 1, borderRadius: 1 }}>
-          <Typography variant="caption" color="white">Failed to load county boundaries</Typography>
+          <Typography variant="caption" color="white">Error: {fetchError}</Typography>
         </Box>
       )}
       <MapGL
@@ -149,9 +160,33 @@ export default function StateMapView({ state, counties }: StateMapViewProps) {
       >
         <NavigationControl position="top-right" />
         {geoData && (
-          <Source type="geojson" data={geoData}>
-            <Layer {...fillLayer} />
-            <Layer {...lineLayer} />
+          <Source id="counties" type="geojson" data={geoData}>
+            <Layer
+              id="county-fill"
+              type="fill"
+              paint={{
+                "fill-color": ["get", "fillColor"],
+                "fill-opacity": 0.85,
+              }}
+            />
+            <Layer
+              id="county-outline"
+              type="line"
+              paint={{
+                "line-color": hoveredId ? [
+                  "case",
+                  ["==", ["get", "countyName"], hoveredId],
+                  "#FFD700",
+                  "rgba(255, 255, 255, 0.6)"
+                ] : "rgba(255, 255, 255, 0.6)",
+                "line-width": hoveredId ? [
+                  "case",
+                  ["==", ["get", "countyName"], hoveredId],
+                  3,
+                  1
+                ] : 1,
+              }}
+            />
           </Source>
         )}
       </MapGL>
