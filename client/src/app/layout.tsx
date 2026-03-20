@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import Providers from "@/components/common/Providers";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import DevPanel from "@/components/common/DevPanel";
 import "@/styles/globals.css";
 import "mapbox-gl/dist/mapbox-gl.css";
 
@@ -49,6 +50,7 @@ export default function RootLayout({
             <main style={{ flex: 1 }}>{children}</main>
             <Footer />
           </div>
+          <DevPanel />
         </Providers>
       </body>
     </html>
