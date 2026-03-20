@@ -140,37 +140,75 @@ export function usePropertiesData(countyFips?: string, stateAbbr?: string) {
 }
 
 // ─── useAnalyticsData ───────────────────────────────
+
+// All scraped years available as JSON files in /data/live/
+const SCRAPED_YEARS = [2000, 2001];
+
+async function fetchAllLiveYears(): Promise<Map<number, number>> {
+  const totals = new Map<number, number>();
+  const results = await Promise.all(
+    SCRAPED_YEARS.map(async (year) => {
+      try {
+        const res = await fetch(`/data/live/${year}_summary.json`);
+        if (!res.ok) return null;
+        const data: LiveYearSummary = await res.json();
+        return { year, total: data.national_summary.total_establishments };
+      } catch { return null; }
+    })
+  );
+  for (const r of results) {
+    if (r) totals.set(r.year, r.total);
+  }
+  return totals;
+}
+
+// Build a YearData entry from a real total by distributing proportionally
+// using the closest mock year's citizenship distribution as a template
+function buildLiveYearData(year: number, realTotal: number): YearData {
+  // Find closest mock year to use as distribution template
+  const closest = OWNERSHIP_BY_YEAR.reduce((best, yd) =>
+    Math.abs(yd.year - year) < Math.abs(best.year - year) ? yd : best
+  );
+  const mockTotal = CITIZENSHIP_KEYS.reduce((sum, k) => sum + (closest[k as keyof YearData] as number), 0);
+  const ratio = realTotal / mockTotal;
+
+  const entry: Record<string, number> = { year };
+  for (const k of CITIZENSHIP_KEYS) {
+    entry[k] = Math.round((closest[k as keyof YearData] as number) * ratio);
+  }
+  return entry as unknown as YearData;
+}
+
 export function useAnalyticsData() {
   const dataSource = useDataSource();
 
   const liveQuery = useQuery({
-    queryKey: ["live-summary", LATEST_LIVE_YEAR],
-    queryFn: fetchLiveSummary,
+    queryKey: ["live-analytics-all"],
+    queryFn: fetchAllLiveYears,
     enabled: dataSource === "live",
     staleTime: Infinity,
   });
 
-  // For live mode, overlay real establishment count for matching years
-  if (dataSource === "live" && liveQuery.data) {
-    const liveTotal = liveQuery.data.national_summary.total_establishments;
-    // Update the year entries that match our scraped years
-    const adjusted = OWNERSHIP_BY_YEAR.map((yd) => {
-      if (yd.year === 2000 || yd.year === 2002) {
-        // Scale all citizenship groups proportionally to match real total
-        const mockTotal = CITIZENSHIP_KEYS.reduce((sum, k) => sum + (yd[k as keyof YearData] as number), 0);
-        const ratio = liveTotal / mockTotal;
-        const scaled = { ...yd };
-        for (const k of CITIZENSHIP_KEYS) {
-          (scaled as Record<string, number>)[k] = Math.round((yd[k as keyof YearData] as number) * ratio);
-        }
-        return scaled;
-      }
-      return yd;
-    });
-    return { data: adjusted, source: "live" as const, liveTotal };
+  if (dataSource === "live" && liveQuery.data && liveQuery.data.size > 0) {
+    const totals = liveQuery.data;
+    // Only show years we actually have scraped data for
+    const liveYears: YearData[] = [];
+    for (const [year, total] of totals) {
+      liveYears.push(buildLiveYearData(year, total));
+    }
+    liveYears.sort((a, b) => a.year - b.year);
+
+    return {
+      data: liveYears,
+      source: "live" as const,
+      liveTotal: liveYears.length > 0
+        ? CITIZENSHIP_KEYS.reduce((sum, k) => sum + (liveYears[liveYears.length - 1][k as keyof YearData] as number), 0)
+        : null,
+      scrapedYears: SCRAPED_YEARS,
+    };
   }
 
-  return { data: OWNERSHIP_BY_YEAR, source: dataSource, liveTotal: null };
+  return { data: OWNERSHIP_BY_YEAR, source: dataSource, liveTotal: null, scrapedYears: null };
 }
 
 // ─── useTotalStats ──────────────────────────────────

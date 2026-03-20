@@ -151,7 +151,9 @@ export default function AnalyticsPage() {
           />
         </Box>
         <Typography variant="body1" color="text.secondary">
-          How hotel & motel ownership has changed across communities from 2000 to 2026.
+          {analyticsSource === "live"
+            ? `Real Census data for ${years.join(", ")}. More years added as we scrape them.`
+            : "How hotel & motel ownership has changed across communities from 2000 to 2026."}
           {!drillCitizenship && " Click any bar to drill down into sub-categories."}
         </Typography>
       </Box>
