@@ -57,3 +57,83 @@ export const CITIZENSHIP_CHART_COLORS: Record<string, string> = {
   european_american: "#14B8A6",
   other: "#6B7280",
 };
+
+// Sub-category breakdown within each citizenship group
+// Percentages that distribute the parent total into sub-groups
+export interface SubCategory {
+  key: string;
+  label: string;
+  color: string;
+  pct: number; // percentage of parent group
+}
+
+export const CITIZENSHIP_SUBCATEGORIES: Record<string, SubCategory[]> = {
+  indian_american: [
+    { key: "gujarati_patel", label: "Gujarati (Patel)", color: "#FB923C", pct: 0.42 },
+    { key: "gujarati_other", label: "Gujarati (Other)", color: "#FDBA74", pct: 0.18 },
+    { key: "punjabi", label: "Punjabi", color: "#F97316", pct: 0.12 },
+    { key: "south_indian", label: "South Indian", color: "#EA580C", pct: 0.10 },
+    { key: "sindhi", label: "Sindhi", color: "#C2410C", pct: 0.06 },
+    { key: "marwari", label: "Marwari / Rajasthani", color: "#9A3412", pct: 0.05 },
+    { key: "bengali", label: "Bengali", color: "#7C2D12", pct: 0.04 },
+    { key: "other_indian", label: "Other Indian", color: "#431407", pct: 0.03 },
+  ],
+  chinese_american: [
+    { key: "cantonese", label: "Cantonese", color: "#F87171", pct: 0.35 },
+    { key: "fujianese", label: "Fujianese", color: "#EF4444", pct: 0.25 },
+    { key: "taiwanese", label: "Taiwanese", color: "#DC2626", pct: 0.18 },
+    { key: "mandarin_mainland", label: "Mainland (Mandarin)", color: "#B91C1C", pct: 0.15 },
+    { key: "other_chinese", label: "Other Chinese", color: "#991B1B", pct: 0.07 },
+  ],
+  korean_american: [
+    { key: "korean_first_gen", label: "First Generation", color: "#A78BFA", pct: 0.45 },
+    { key: "korean_second_gen", label: "Second Generation", color: "#8B5CF6", pct: 0.35 },
+    { key: "korean_recent", label: "Recent Immigrants", color: "#7C3AED", pct: 0.20 },
+  ],
+  vietnamese_american: [
+    { key: "viet_south", label: "Southern Vietnamese", color: "#34D399", pct: 0.55 },
+    { key: "viet_central", label: "Central Vietnamese", color: "#10B981", pct: 0.25 },
+    { key: "viet_north", label: "Northern Vietnamese", color: "#059669", pct: 0.20 },
+  ],
+  hispanic_american: [
+    { key: "mexican_american", label: "Mexican American", color: "#FCD34D", pct: 0.45 },
+    { key: "cuban_american", label: "Cuban American", color: "#F59E0B", pct: 0.20 },
+    { key: "colombian", label: "Colombian", color: "#D97706", pct: 0.12 },
+    { key: "puerto_rican", label: "Puerto Rican", color: "#B45309", pct: 0.10 },
+    { key: "other_hispanic", label: "Other Hispanic", color: "#92400E", pct: 0.13 },
+  ],
+  african_american: [
+    { key: "aa_southern", label: "Southern US Heritage", color: "#818CF8", pct: 0.40 },
+    { key: "nigerian_american", label: "Nigerian American", color: "#6366F1", pct: 0.22 },
+    { key: "ethiopian_american", label: "Ethiopian American", color: "#4F46E5", pct: 0.15 },
+    { key: "caribbean_american", label: "Caribbean American", color: "#4338CA", pct: 0.13 },
+    { key: "other_african", label: "Other African Descent", color: "#3730A3", pct: 0.10 },
+  ],
+  middle_eastern_american: [
+    { key: "iranian_american", label: "Iranian American", color: "#F472B6", pct: 0.30 },
+    { key: "lebanese_american", label: "Lebanese American", color: "#EC4899", pct: 0.22 },
+    { key: "turkish_american", label: "Turkish American", color: "#DB2777", pct: 0.18 },
+    { key: "arab_american", label: "Arab American (Other)", color: "#BE185D", pct: 0.18 },
+    { key: "israeli_american", label: "Israeli American", color: "#9D174D", pct: 0.12 },
+  ],
+  european_american: [
+    { key: "german_american", label: "German American", color: "#5EEAD4", pct: 0.25 },
+    { key: "italian_american", label: "Italian American", color: "#14B8A6", pct: 0.22 },
+    { key: "irish_american", label: "Irish American", color: "#0D9488", pct: 0.18 },
+    { key: "greek_american", label: "Greek American", color: "#0F766E", pct: 0.15 },
+    { key: "eastern_european", label: "Eastern European", color: "#115E59", pct: 0.12 },
+    { key: "other_european", label: "Other European", color: "#134E4A", pct: 0.08 },
+  ],
+  us_citizen: [
+    { key: "us_corporate_chain", label: "Corporate Chains", color: "#93C5FD", pct: 0.35 },
+    { key: "us_family_owned", label: "Family Owned", color: "#60A5FA", pct: 0.28 },
+    { key: "us_reit", label: "REITs / Investment Groups", color: "#3B82F6", pct: 0.20 },
+    { key: "us_franchise", label: "Franchise Operators", color: "#2563EB", pct: 0.12 },
+    { key: "us_other", label: "Other US Entities", color: "#1D4ED8", pct: 0.05 },
+  ],
+  other: [
+    { key: "other_asian", label: "Other Asian", color: "#9CA3AF", pct: 0.40 },
+    { key: "other_mixed", label: "Mixed / Unclassified", color: "#6B7280", pct: 0.35 },
+    { key: "other_international", label: "International", color: "#4B5563", pct: 0.25 },
+  ],
+};
