@@ -4,6 +4,7 @@ import { Person, Hotel, LocationOn, Business } from "@mui/icons-material";
 import Breadcrumbs from "@/components/common/Breadcrumbs";
 import StatCard from "@/components/common/StatCard";
 import PropertyTable from "@/components/detail/PropertyTable";
+import PropertyMapView from "@/components/map/PropertyMapView";
 import { getOwnerBySlug, getOwnerProperties } from "@/data/mockProperties";
 import { STATE_ABBR_TO_NAME } from "@/data/states";
 import { ownerTypeLabel } from "@/utils/format";
@@ -39,17 +40,17 @@ export default async function OwnerPage({ params }: PageProps) {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 3 }}>
+    <Container maxWidth="xl" sx={{ py: 3 }}>
       <Breadcrumbs
         items={[
           { label: "Home", href: "/" },
-          { label: "Search", href: "/search" },
+          { label: "Owners", href: "/owners" },
           { label: owner.name },
         ]}
       />
 
       <Box sx={{ mb: 3 }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1, flexWrap: "wrap" }}>
           <Typography variant="h4" fontWeight={700}>
             {owner.name}
           </Typography>
@@ -72,6 +73,22 @@ export default async function OwnerPage({ params }: PageProps) {
           <StatCard title="States" value={owner.statesPresent.length} icon={LocationOn} color="#34D399" />
         </Grid>
       </Grid>
+
+      {/* Map showing all properties for this owner */}
+      {properties.length > 0 && (
+        <Box
+          sx={{
+            height: { xs: 300, sm: 400 },
+            borderRadius: 3,
+            overflow: "hidden",
+            border: "1px solid",
+            borderColor: "divider",
+            mb: 3,
+          }}
+        >
+          <PropertyMapView properties={properties} />
+        </Box>
+      )}
 
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 4 }}>

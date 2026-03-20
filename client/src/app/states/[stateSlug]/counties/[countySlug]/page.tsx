@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
-import { Container, Box, Typography, Grid, Card, CardContent, Chip } from "@mui/material";
-import { Hotel, MapsHomeWork, Person, OpenInNew } from "@mui/icons-material";
+import { Container, Box, Typography, Grid, Card, CardContent } from "@mui/material";
+import { Hotel, MapsHomeWork, Person } from "@mui/icons-material";
 import Breadcrumbs from "@/components/common/Breadcrumbs";
 import StatCard from "@/components/common/StatCard";
 import PropertyTable from "@/components/detail/PropertyTable";
+import PropertyMapView from "@/components/map/PropertyMapView";
 import { getStateBySlug, STATE_SLUG_TO_ABBR } from "@/data/states";
 import { getCountyBySlug } from "@/data/counties";
 import { getPropertiesByCounty } from "@/data/mockProperties";
@@ -72,7 +73,24 @@ export default async function CountyPage({ params }: PageProps) {
       </Grid>
 
       {properties.length > 0 ? (
-        <PropertyTable properties={properties} stateSlug={stateSlug} />
+        <Grid container spacing={3}>
+          <Grid size={{ xs: 12, lg: 7 }}>
+            <Box
+              sx={{
+                height: { xs: 350, sm: 450 },
+                borderRadius: 3,
+                overflow: "hidden",
+                border: "1px solid",
+                borderColor: "divider",
+              }}
+            >
+              <PropertyMapView properties={properties} />
+            </Box>
+          </Grid>
+          <Grid size={{ xs: 12, lg: 5 }}>
+            <PropertyTable properties={properties} stateSlug={stateSlug} />
+          </Grid>
+        </Grid>
       ) : (
         <Card>
           <CardContent sx={{ textAlign: "center", py: 6 }}>
