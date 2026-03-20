@@ -1,7 +1,7 @@
 "use client";
 
 import { AppBar, Toolbar, Typography, Box, IconButton, Button, Chip } from "@mui/material";
-import { Search as SearchIcon, DarkMode, LightMode, Hotel, People, Map as MapIcon } from "@mui/icons-material";
+import { Search as SearchIcon, DarkMode, LightMode, Hotel, People, Map as MapIcon, BarChart } from "@mui/icons-material";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useThemeStore } from "@/stores/themeStore";
@@ -9,6 +9,7 @@ import { useThemeStore } from "@/stores/themeStore";
 const NAV_ITEMS = [
   { label: "Map", href: "/", icon: MapIcon },
   { label: "Owners", href: "/owners", icon: People },
+  { label: "Analytics", href: "/analytics", icon: BarChart },
   { label: "Search", href: "/search", icon: SearchIcon },
 ];
 
