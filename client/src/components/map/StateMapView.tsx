@@ -27,7 +27,7 @@ interface HoveredCounty {
 
 export default function StateMapView({ state, counties }: StateMapViewProps) {
   const router = useRouter();
-  const { data: countyGeo, isLoading } = useCountyGeo(state.stateAbbr);
+  const { data: countyGeo, isLoading, error } = useCountyGeo(state.stateAbbr);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [hovered, setHovered] = useState<HoveredCounty | null>(null);
 
@@ -60,7 +60,7 @@ export default function StateMapView({ state, counties }: StateMapViewProps) {
           properties: {
             ...f.properties,
             propertyCount: county?.propertyCount || 0,
-            fillColor: county ? colorScale(county.propertyCount) : "#1a1a2e",
+            fillColor: county ? colorScale(county.propertyCount) : "#1e293b",
             countyName: name,
             slug: county?.slug || "",
           },
@@ -74,7 +74,7 @@ export default function StateMapView({ state, counties }: StateMapViewProps) {
     type: "fill",
     paint: {
       "fill-color": ["get", "fillColor"],
-      "fill-opacity": ["case", ["==", ["get", "countyName"], hoveredId || ""], 0.9, 0.7],
+      "fill-opacity": ["case", ["==", ["get", "countyName"], hoveredId || ""], 0.95, 0.8],
     },
   };
 
@@ -82,8 +82,8 @@ export default function StateMapView({ state, counties }: StateMapViewProps) {
     id: "county-outline",
     type: "line",
     paint: {
-      "line-color": ["case", ["==", ["get", "countyName"], hoveredId || ""], "#FFD700", BORDER_COLOR],
-      "line-width": ["case", ["==", ["get", "countyName"], hoveredId || ""], 2, 0.5],
+      "line-color": ["case", ["==", ["get", "countyName"], hoveredId || ""], "#FFD700", "rgba(255, 255, 255, 0.5)"],
+      "line-width": ["case", ["==", ["get", "countyName"], hoveredId || ""], 2.5, 1],
     },
   };
 
@@ -128,6 +128,11 @@ export default function StateMapView({ state, counties }: StateMapViewProps) {
       {isLoading && (
         <Box sx={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 10 }}>
           <CircularProgress size={32} />
+        </Box>
+      )}
+      {error && (
+        <Box sx={{ position: "absolute", top: 12, left: 12, zIndex: 10, bgcolor: "error.main", px: 2, py: 1, borderRadius: 1 }}>
+          <Typography variant="caption" color="white">Failed to load county boundaries</Typography>
         </Box>
       )}
       <MapGL
