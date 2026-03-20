@@ -94,7 +94,7 @@ export default function DevPanel() {
             <ToggleButtonGroup
               value={dataSource}
               exclusive
-              onChange={(_, v) => { if (v) setDataSource(v); }}
+              onChange={(_, v) => { if (v) { setDataSource(v); } }}
               size="small"
               fullWidth
               sx={{ mb: 2 }}
