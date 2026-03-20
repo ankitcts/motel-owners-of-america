@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import {
   Box, Paper, IconButton, Typography, Switch, FormControlLabel,
-  Chip, Collapse, Divider, ToggleButtonGroup, ToggleButton,
+  Chip, Divider, ToggleButtonGroup, ToggleButton,
 } from "@mui/material";
 import { Settings, Close, Code, Storage, BugReport } from "@mui/icons-material";
 import { useDevStore } from "@/stores/devStore";
@@ -11,12 +11,10 @@ import { useDevStore } from "@/stores/devStore";
 export default function DevPanel() {
   const { devMode, dataSource, hydrated, toggleDevMode, setDataSource } = useDevStore();
   const [open, setOpen] = useState(false);
-
-  if (!hydrated) return null;
-
-  // Secret: triple-click the settings icon to enable dev mode
   const [clickCount, setClickCount] = useState(0);
-  const handleSettingsClick = () => {
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleSettingsClick = useCallback(() => {
     if (!devMode) {
       const newCount = clickCount + 1;
       setClickCount(newCount);
@@ -25,16 +23,17 @@ export default function DevPanel() {
         setClickCount(0);
         setOpen(true);
       }
-      // Reset after 2 seconds
-      setTimeout(() => setClickCount(0), 2000);
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => setClickCount(0), 2000);
     } else {
-      setOpen(!open);
+      setOpen((prev) => !prev);
     }
-  };
+  }, [devMode, clickCount, toggleDevMode]);
+
+  if (!hydrated) return null;
 
   return (
     <>
-      {/* Floating trigger button */}
       <IconButton
         onClick={handleSettingsClick}
         sx={{
@@ -57,7 +56,6 @@ export default function DevPanel() {
         {devMode ? <BugReport fontSize="small" /> : <Settings fontSize="small" />}
       </IconButton>
 
-      {/* Dev panel */}
       {devMode && (
         <Paper
           elevation={8}
@@ -76,7 +74,6 @@ export default function DevPanel() {
           }}
         >
           <Box sx={{ p: 2 }}>
-            {/* Header */}
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1.5 }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <Code sx={{ color: "warning.main", fontSize: 20 }} />
@@ -84,16 +81,13 @@ export default function DevPanel() {
                   Dev Settings
                 </Typography>
               </Box>
-              <Box sx={{ display: "flex", gap: 0.5 }}>
-                <IconButton size="small" onClick={() => setOpen(false)} sx={{ color: "text.secondary" }}>
-                  <Close fontSize="small" />
-                </IconButton>
-              </Box>
+              <IconButton size="small" onClick={() => setOpen(false)} sx={{ color: "text.secondary" }}>
+                <Close fontSize="small" />
+              </IconButton>
             </Box>
 
             <Divider sx={{ mb: 2 }} />
 
-            {/* Data source toggle */}
             <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: "block" }}>
               Data Source
             </Typography>
@@ -113,7 +107,6 @@ export default function DevPanel() {
               </ToggleButton>
             </ToggleButtonGroup>
 
-            {/* Status */}
             <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
               <Chip
                 label={dataSource === "mock" ? "MOCK" : "LIVE"}
@@ -134,20 +127,12 @@ export default function DevPanel() {
 
             <Divider sx={{ mb: 1.5 }} />
 
-            {/* Exit dev mode */}
             <FormControlLabel
               control={
-                <Switch
-                  checked={devMode}
-                  onChange={toggleDevMode}
-                  size="small"
-                  color="warning"
-                />
+                <Switch checked={devMode} onChange={toggleDevMode} size="small" color="warning" />
               }
               label={
-                <Typography variant="caption" color="text.secondary">
-                  Dev Mode
-                </Typography>
+                <Typography variant="caption" color="text.secondary">Dev Mode</Typography>
               }
             />
           </Box>
