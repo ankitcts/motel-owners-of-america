@@ -15,7 +15,7 @@ const NAV_ITEMS = [
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
-  const { mode, toggleMode } = useThemeStore();
+  const { mode, hydrated, toggleMode } = useThemeStore();
 
   return (
     <AppBar
@@ -90,9 +90,11 @@ export default function Header() {
 
         <Box sx={{ flexGrow: 1 }} />
 
-        <IconButton size="small" onClick={toggleMode} sx={{ color: "text.secondary" }}>
-          {mode === "dark" ? <LightMode fontSize="small" /> : <DarkMode fontSize="small" />}
-        </IconButton>
+        {hydrated && (
+          <IconButton size="small" onClick={toggleMode} sx={{ color: "text.secondary" }}>
+            {mode === "dark" ? <LightMode fontSize="small" /> : <DarkMode fontSize="small" />}
+          </IconButton>
+        )}
       </Toolbar>
     </AppBar>
   );
