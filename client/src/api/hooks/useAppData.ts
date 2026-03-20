@@ -214,6 +214,21 @@ export function useAnalyticsData() {
   return { data: OWNERSHIP_BY_YEAR, source: dataSource, liveTotal: null, scrapedYears: null };
 }
 
+// ─── useAvailableYears ──────────────────────────────
+// Returns dynamically available years based on data source
+export function useAvailableYears() {
+  const dataSource = useDataSource();
+
+  if (dataSource === "live") {
+    // Only years we've actually scraped
+    return { years: [...SCRAPED_YEARS].sort((a, b) => a - b), defaultIndex: SCRAPED_YEARS.length - 1 };
+  }
+
+  // Mock: all years from trend data
+  const years = OWNERSHIP_BY_YEAR.map((d) => d.year);
+  return { years, defaultIndex: years.length - 1 };
+}
+
 // ─── useTotalStats ──────────────────────────────────
 export function useTotalStats(states: StateSummary[]) {
   return states.reduce(

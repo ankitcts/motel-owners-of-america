@@ -7,21 +7,21 @@ import USMap from "@/components/map/USMap";
 import StatCard from "@/components/common/StatCard";
 import StateList from "@/components/detail/StateList";
 import YearSelector from "@/components/common/YearSelector";
-import { useStatesData, useTotalStats } from "@/api/hooks/useAppData";
-import { OWNERSHIP_BY_YEAR } from "@/data/ownershipTrends";
-
-const MOCK_YEARS = OWNERSHIP_BY_YEAR.map((d) => d.year);
+import { useStatesData, useTotalStats, useAvailableYears } from "@/api/hooks/useAppData";
 
 export default function HomePage() {
-  const [yearIndex, setYearIndex] = useState(MOCK_YEARS.length - 1);
+  const { years, defaultIndex } = useAvailableYears();
+  const [yearIndex, setYearIndex] = useState(defaultIndex);
   const { states, loading, error, source, year } = useStatesData();
   const stats = useTotalStats(states);
 
-  const handleYearChange = useCallback((idx: number) => {
-    setYearIndex(Math.max(0, Math.min(MOCK_YEARS.length - 1, idx)));
-  }, []);
+  // Clamp yearIndex when years change (e.g. switching mock ↔ live)
+  const safeIndex = Math.min(yearIndex, years.length - 1);
+  const selectedYear = years[safeIndex] || years[years.length - 1];
 
-  const selectedYear = MOCK_YEARS[yearIndex];
+  const handleYearChange = useCallback((idx: number) => {
+    setYearIndex(Math.max(0, Math.min(years.length - 1, idx)));
+  }, [years.length]);
 
   return (
     <Container maxWidth="xl" sx={{ py: 3 }}>
@@ -49,8 +49,8 @@ export default function HomePage() {
       {/* Year selector */}
       <Box sx={{ mb: 3 }}>
         <YearSelector
-          years={MOCK_YEARS}
-          selectedIndex={yearIndex}
+          years={years}
+          selectedIndex={safeIndex}
           onYearChange={handleYearChange}
         />
       </Box>
